@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http-keycloak
+      protocol: TCP
+    - port: 443
+      targetPort: 8443
+      name: https
+      protocol: TCP
+  selector:
+    app: keycloak
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: keycloak
+        version: v1
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0.4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "start-dev"
+            - "--log-level=DEBUG"
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: admin
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              value: admin
+            - name: KC_HOSTNAME
+              value: "keycloak"
+            - name: KC_HTTPS_CERTIFICATE_FILE
+              value: "/etc/tls/tls.crt"
+            - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+              value: "/etc/tls/tls.key"
+            - name: KC_HTTPS_PORT
+              value: "8443"
+            - name: KC_HTTP_PORT
+              value: "8080"
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            tcpSocket:
+              port: 8443
+          volumeMounts:
+            - name: tls-volume
+              mountPath: /etc/tls
+              readOnly: true
+      volumes:
+        - name: tls-volume
+          secret:
+            secretName: keycloak-tls
+---
+apiVersion: v1
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoekNDQW0rZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF0TVJVd0V3WURWUVFLREF4bGVHRnQKY0d4bElFbHVZeTR4RkRBU0JnTlZCQU1NQzJWNFlXMXdiR1V1WTI5dE1CNFhEVEkxTURNd09URXpNekV4TjFvWApEVE0xTURNd056RXpNekV4TjFvd09qRVpNQmNHQTFVRUF3d1FhMlY1WTJ4dllXc3VaR1ZtWVhWc2RERWRNQnNHCkExVUVDZ3dVWlhoaGJYQnNaU0J2Y21kaGJtbDZZWFJwYjI0d2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUIKRHdBd2dnRUtBb0lCQVFDcTh0UEo3dkVLdENrUVhDeGlpZVhNZEZuNnZ1VWh0aC9ZSlNPdlpzalZMYUIrZU9GSwpIai8zRXlKb0tpNHFacFY4RjZtTWhCbE1LcHp2Zmt4Y05iR0NrTXBvTDdzYlp2TTJpeHIrankzeVRmTUh6SEhlCkpOajZROUJoUjc4bkhRWVVkUVZzcHJ1Q2ZYekhqMXdRWmpVTnJOYjIrRWJhL0ljQVVMQWR2ZHJhR096Z3MzVU8KU3F2Yy9QamlxbmJtaXI4VzRJV1JiOXdBcmRzNkxObGlFNjliYUl4VFBHVlp4UlpjM3hobmE5Sk1rRXl6QnFVYwpLblZEZW0waENrWFBpRERKYXFaRVJzNi93aEVFYy9mVWxsN3hnUU5UZkN0NlBBa2c1elBqN1N2Zm1DTU5aMFBvCmxNUm1vNk44MXhVYzNvOHJ3c2ZFZGE2aytzS0tpN3JlZ25lUEFnTUJBQUdqZ2FRd2dhRXdYd1lEVlIwUkJGZ3cKVm9JSWEyVjVZMnh2WVd1Q0VHdGxlV05zYjJGckxtUmxabUYxYkhTQ0ZHdGxlV05zYjJGckxtUmxabUYxYkhRdQpjM1pqZ2lKclpYbGpiRzloYXk1a1pXWmhkV3gwTG5OMll5NWpiSFZ6ZEdWeUxteHZZMkZzTUIwR0ExVWREZ1FXCkJCVEJTQmJvVGhXOXNTd3RzempvRkpBY3NOY1J4akFmQmdOVkhTTUVHREFXZ0JSUlZTdjN0STJpYmhjTFl4clUKSEx2SWs0eVpRVEFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBUnpTalN6QUp5enRTRUtjWVRib3JVc1RLa2hYZApySEkrSjJRbmRCbXNpdSt1S245UzYvRjRPVVhPSnVESG1rSjROTE5pMUdWd0ZiMk54MzhFWFNDNGxKQXRNRnNvClFhZ0VoZ3o1SW5vSkVob00zQkFVMCtPL3RacUw2OFdtc0FXbXRTUDk0M0xwZlFPRmsybFpNcWpOazBNaDlHM2kKRDNFNTh6ZVZlZWVjWHQ0bkdRWmhBN0I3ZC90a2ZFeGQ2QWZ3R2t3S2dQS043WEdKTlk0a1F5eWlxTjFKMzlCago3cCtSVXRBbFVpRDRmWE5zcXk2QzN3Ty84MDhZa2t3dTk4NzVVand5M1A5ZE1tcUVxQ1d3ajM3VklNNjErNHMrCm9aWjRWYmZSQ3psZWREckNnazNvVG5jTnE5SDlFa25qSWg4VERoemtNYWowWkJzNFJLRGpLZVdaWEE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQ3E4dFBKN3ZFS3RDa1EKWEN4aWllWE1kRm42dnVVaHRoL1lKU092WnNqVkxhQitlT0ZLSGovM0V5Sm9LaTRxWnBWOEY2bU1oQmxNS3B6dgpma3hjTmJHQ2tNcG9MN3NiWnZNMml4citqeTN5VGZNSHpISGVKTmo2UTlCaFI3OG5IUVlVZFFWc3BydUNmWHpICmoxd1FaalVOck5iMitFYmEvSWNBVUxBZHZkcmFHT3pnczNVT1NxdmMvUGppcW5ibWlyOFc0SVdSYjl3QXJkczYKTE5saUU2OWJhSXhUUEdWWnhSWmMzeGhuYTlKTWtFeXpCcVVjS25WRGVtMGhDa1hQaURESmFxWkVSczYvd2hFRQpjL2ZVbGw3eGdRTlRmQ3Q2UEFrZzV6UGo3U3ZmbUNNTlowUG9sTVJtbzZOODF4VWMzbzhyd3NmRWRhNmsrc0tLCmk3cmVnbmVQQWdNQkFBRUNnZ0VBQkI1am9lcmkzZG9uWHlDSlpUcGpVZ0MvcGozeE1WVzlBSzBzWmU1NUNrSFcKS3hYb2Y2dW82T0FLSlM1Vy9HaUtVM29TZUxNNkZNNjJCME1vdmRRQldkNzVNWGRzNzZVVVdRMFM4bTBxc3pyVApqeTJLMU1wWWUvY2tUeU8yWkUvYnRLUjVJL3dFYW9seGR6RnFDMjhhK2lCZThZWmIxcXpjNTlJSjNEMlZ4MGxtClVjQXBLQlJUZCtXeU1IOFh3TWNxQWtDU2V0c3hyT2l1dmMyWlBlV25IbVgzTEYxSTFYbWorSjUzWWhJaVJWdWkKaEtmbEZlRmtCZnUwZG03aWxvcllnY1dZQ0t3ajFKNSsydk1jS1VGZGxBSEpwWUgxTFB1TGR0Sy94VW1NRTl6QQo5aUYrS3RZUENYTVc0ZTVMTWlsci9qb2pQZ1lYb2Y4TWd1aVdXZWc5eVFLQmdRRG5oWnhHVTN5ZzhyWExKQUVtCklhWjNnUmxDSjVibFh5TmJqd1pkbkdHOVd5d3FhZi8rSnp5NTVsR01VcncxU1FMcWRsWWIzS2dYZld3aFltTzUKTitJNVdLNklQbkQxMW9xTEFVNXZIdmlzcVlXQnF0cy8xUUZnem01TFVtOVRKcFhaaSt4SEh3ZEQ2NzV2UnlhSwpOUVZjeDl2dTBvNFI5OWtpWktXYzlNeWpXd0tCZ1FDOUJidkI1eVpRUlFzRDRuSW16SVp4THpnbDFqT3JPWThZClVIYzNSaDRWQXlQNGVYU2hIYlFRT0l5Uzl4aEs1Ynhyd1dmSVdpN2kwZTlyVmxpUDdZRjYwM1JUZTFtVFphMmoKU1FlRnUxNEIwMXBvVWFGTHpBWGt2SGdwNW1VazJ6N0tGNG1IMXZrRFphTFcrNTZHbmRGanUrcUFFcG12SlA3WgpEOVZnSktEMjNRS0JnQ2YzSDNmZ1Y0WXMvNGEyaTJBNnROS3lQVnIzSEl3eHRSZk1BNnhMSDNBaGVlbEViUVZCClhyRTBlZVZBTHU3LzBIb0t2V2lIMlpoY2RUcjZFZjdhRDdvWWZlQlU3d2p3NU8rRDVUYzNZSFBsdTM4YnNFYy8Kak1KYVFCM09lQnNoY1FLaHJjTEZMMnJoR2ZsNWpjU1R6SDRzbmVHSEJURkMySCtnWWhwTEE3dzdBb0dCQUx3MApDamRObEh0VjAxcmh5L0RQc1lqZWtCUTBTNnZQbXFlRjdyMk5SZ1I3NVFQUXdveHRDODBlMFBDL3NHTmFqUm5wCkx4RndvY0JiY1B3NXMrSlNnNW90RW1UUXEyYTBWWWYvL2Nwc3ZYUXA0WmwrdFkvSHE1S05DVVFHejJ3OEZDK1oKOGVqYjVZSTVYMEtZczhXck8wSUhaN3h2U0svM3NQdWs1VHBlSGhyTkFvR0FSeXZNcXlwN0pLeWZqanpWbzEzNApDUUNhZ3MzcjhFZUU0VXZ3TXN6T0JKK2piZEFuOEhHOWh1T1BRWGt3QmlGUXFVT3dzVGgvQ1JWRElJaFhOTWdBCmE4U1VDY1IrOURIVFd2SnVmeElBR2JYME1sMUs2cXpkVVJhUEVoVDhlR3Zkbzh2ZEYwRGZxL01ZbFN5clZ3Y0cKQnpacUhKeEV0YytVT2E0aTg5eXg3Slk9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+kind: Secret
+metadata:
+  name: keycloak-tls
+type: kubernetes.io/tls
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-keycloak
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-keycloak
+          image: curlimages/curl:latest
+          command: ["sh", "-c", "until curl -s -o /dev/null -w '%{http_code}' http://keycloak:80; do sleep 2; done"]
+      containers:
+        - name: setup-keycloak
+          image: quay.io/keycloak/keycloak:26.0.4
+          command: ["bash", "/opt/keycloak/scripts/setup.sh"]
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
+          volumeMounts:
+            - name: setup-script
+              mountPath: /opt/keycloak/scripts
+      volumes:
+        - name: setup-script
+          configMap:
+            name: setup-keycloak
+      restartPolicy: Never
+  backoffLimit: 4
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: setup-keycloak
+data:
+  setup.sh: |
+    KEYCLOAK_SERVER="http://keycloak"
+    REALM="master"
+    USERNAME=oidcuser                  # This is the user name that will be used for user authentication in Authorization Code Flow
+    PASSWORD=oidcpassword              # This is the user password that will be used for user authentication in Authorization Code Flow
+    CLIENT_ID=oidctest
+    CLIENT_SECRET=oidctest-client-secret
+    REDIRECT_URL=https://www.example.com/foo/oauth2/callback
+
+    set -ex
+
+    /opt/keycloak/bin/kcadm.sh create users \
+    -s username="${USERNAME}" \
+    -s enabled=true \
+    --server "${KEYCLOAK_SERVER}" \
+    --realm "${REALM}" \
+    --user "${KEYCLOAK_ADMIN}" \
+    --password "${KEYCLOAK_ADMIN_PASSWORD}"
+
+    /opt/keycloak/bin/kcadm.sh set-password \
+    --username "${USERNAME}" \
+    --new-password "${PASSWORD}" \
+    --server "${KEYCLOAK_SERVER}" \
+    --realm "${REALM}" \
+    --user "${KEYCLOAK_ADMIN}" \
+    --password "${KEYCLOAK_ADMIN_PASSWORD}"
+
+    /opt/keycloak/bin/kcreg.sh create \
+    -s clientId="${CLIENT_ID}" \
+    -s secret="${CLIENT_SECRET}" \
+    -s "redirectUris=[\"${REDIRECT_URL}\"]" \
+    -s consentRequired=false \
+    --server "${KEYCLOAK_SERVER}" \
+    --realm "${REALM}" \
+    --user "${KEYCLOAK_ADMIN}" \
+    --password "${KEYCLOAK_ADMIN_PASSWORD}"

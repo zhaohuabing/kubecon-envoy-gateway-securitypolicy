@@ -1,0 +1,138 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: foo
+spec:
+  parentRefs:
+  - name: eg
+  hostnames: ["www.example.com"]
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /foo              # This is the path that will be protected by OIDC
+    backendRefs:
+    - name: backend
+      port: 3000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: keycloak
+spec:
+  parentRefs:
+  - name: eg
+  hostnames: ["keycloak"]
+  rules:
+  - backendRefs:
+    - name: keycloak
+      port: 443
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oidctest-secret
+data:
+  client-secret: b2lkY3Rlc3QtY2xpZW50LXNlY3JldA==   # base64 encoding of "oidctest-client-secret"
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: keycloak-oidc
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: foo
+  oidc:
+    provider:
+      backendRefs:
+      - group: gateway.envoyproxy.io
+        kind: Backend
+        name: backend-keycloak
+        port: 443
+      backendSettings:
+        retry:
+          numRetries: 3
+          perRetry:
+            backOff:
+              baseInterval: 1s
+              maxInterval: 5s
+          retryOn:
+            triggers: ["5xx", "gateway-error", "reset"]
+      issuer: "https://keycloak.default/realms/master"
+    clientID: "oidctest"
+    clientSecret:
+      name: "oidctest-secret"
+    redirectURL: "https://www.example.com/foo/oauth2/callback"
+    logoutPath: "/foo/logout"
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: backend-keycloak
+spec:
+  endpoints:
+  - fqdn:
+      hostname: 'keycloak.default'
+      port: 443
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: policy-btls-keycloak-backend
+spec:
+  targetRefs:
+  - group: gateway.envoyproxy.io
+    kind: Backend
+    name: backend-keycloak
+  validation:
+    caCertificateRefs:
+    - name: backend-tls-certificate
+      group: ""
+      kind: ConfigMap
+    hostname: keycloak.default
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: policy-btls-keycloak-service
+spec:
+  targetRefs:
+  - name: keycloak
+    group: ""
+    kind: Service
+  validation:
+    caCertificateRefs:
+    - name: backend-tls-certificate
+      group: ""
+      kind: ConfigMap
+    hostname: keycloak
+---
+apiVersion: v1
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIDOzCCAiOgAwIBAgIURVwQUAAZQU8h3MIR9yEN0B/djA8wDQYJKoZIhvcNAQEL
+    BQAwLTEVMBMGA1UECgwMZXhhbXBsZSBJbmMuMRQwEgYDVQQDDAtleGFtcGxlLmNv
+    bTAeFw0yNTAzMDkxMzEwNTBaFw0zNTAzMDcxMzEwNTBaMC0xFTATBgNVBAoMDGV4
+    YW1wbGUgSW5jLjEUMBIGA1UEAwwLZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEB
+    AQUAA4IBDwAwggEKAoIBAQCl8F6WqU1XCxTaXKiklTJqxjd1MmsekTZKdnAg06b2
+    9B4p9Ytb6RE1z0aIvyiLm66cxv0LvER3dCK8KZMV1k/ZMyIIN9tNkmYoxJ2k1jx+
+    P8lxBbwRi3YPO7MY0xdJ3r2TPJ4iTokBNywyAhiXg34z+GlIBxD5WJt17qeWr3OB
+    1yUwtdjEPoGP7GrjArPPRxuQHU/sTBXExl02jmsYP8qPfx4c31zlYe+JtC39/P74
+    QWYqo7Lsgp3UpwXpsdFMShty1fwRQH8jjvOu/MdldPvK1BbGrzpAjhph8FxQvFWx
+    y/6vG26+3+w1CN+dwEREiDPCEFBzvJXVfvgbvRkMxYwhAgMBAAGjUzBRMB0GA1Ud
+    DgQWBBRRVSv3tI2ibhcLYxrUHLvIk4yZQTAfBgNVHSMEGDAWgBRRVSv3tI2ibhcL
+    YxrUHLvIk4yZQTAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAN
+    BPlTHy+174jv1kYxDRfqt4scr+sX7OVG5cIIFGE6CXiZmycPpahnsf4QuAa7a6AH
+    JwNnnNJkeFDqGAXo8y7sg+KSIVPmtJ8wKB1gyRUQImnWSjQUgiSDbOZQXcelI5et
+    0P4UKLEvX3fbxf+7peP6Bd6vgcIsVdA8GQ/hRQKuDhWcDZ1F/waBdfcoRCfWLqLq
+    xsKHGt5uZTOfseR9FU8Ni+//Ww7KpZk2iQMK5SZNRBWNKVgt2yR3+XyZwXtZecoo
+    mPJFzo+OUvBjWt41NrjmthGXDJwr3+xbmk2PzsBLguyrKaBZLSUPXVPDqEjP4mHL
+    ErwRCdDiiGKLt0VTAe9o
+    -----END CERTIFICATE-----
+kind: ConfigMap
+metadata:
+  name: backend-tls-certificate

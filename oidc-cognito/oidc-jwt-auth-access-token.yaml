@@ -1,0 +1,38 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: oidc-example
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: myapp
+  oidc:
+    provider:
+      issuer: https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_ewsdqjtaD
+    clientID: 3su394h1en0hpdfd86lddh9fkd
+    clientSecret:
+      name: my-app-client-secret
+    redirectURL: https://www.example.com/myapp/oauth2/callback
+    logoutPath: /myapp/logout
+    forwardAccessToken: true
+  jwt:
+    providers:
+    - name: aws-cognito
+      issuer: https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_ewsdqjtaD
+      remoteJWKS:
+        uri: https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_ewsdqjtaD/.well-known/jwks.json
+  authorization:
+    defaultAction: Deny
+    rules:
+    - action: Allow
+      name: allow
+      principal:
+        jwt:
+          scopes: [openid]
+          claims:
+          - name: username
+            valueType: String
+            values:
+            - 89eed458-a031-70a2-f079-21ce7ccae5f0
+          provider: aws-cognito
