@@ -124,7 +124,7 @@ data:
   setup.sh: |
     KEYCLOAK_SERVER="http://keycloak"
     REALM="master"
-    USERNAME=oidcuser                  # This is the user name that will be used for user authentication in Authorization Code Flow
+    USERNAME=zhaohuabing                  # This is the user name that will be used for user authentication in Authorization Code Flow
     PASSWORD=oidcpassword              # This is the user password that will be used for user authentication in Authorization Code Flow
     CLIENT_ID=oidctest
     CLIENT_SECRET=oidctest-client-secret

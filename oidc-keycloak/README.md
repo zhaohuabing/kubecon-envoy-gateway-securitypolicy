@@ -13,6 +13,12 @@ Note: If you already did the installation in the oidc-cognito tutorial, you can 
 ./install.sh
 ```
 
+Note: Backend API is not enabled by default when installing the Envoy Gateway. We need to enable it by running the following command:
+
+```
+./enable-backend.sh
+```
+
 Install Keycloak:
 
 ```
@@ -46,3 +52,6 @@ echo "127.0.0.1 keycloak" | sudo tee -a /etc/hosts
 ```
 
 Open a browser and navigate to `https://www.example.com/foo`. You will be redirected to the Keycloak login page. After successful authentication, you will be redirected back to the application.
+
+
+Note: The `Backend` resource in this demo is not necessary because the Keycloak server is deployed in the same cluster and can be accessed through Kubernetes Service. In a real-world scenario, you would need to create a `Backend` resource to route traffic to the Keycloak server if it is deployed outside the cluster.

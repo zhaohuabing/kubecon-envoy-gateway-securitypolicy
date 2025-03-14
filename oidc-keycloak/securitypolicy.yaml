@@ -108,7 +108,7 @@ spec:
     - name: backend-tls-certificate
       group: ""
       kind: ConfigMap
-    hostname: keycloak
+    hostname: keycloak.default
 ---
 apiVersion: v1
 data:
@@ -136,3 +136,194 @@ data:
 kind: ConfigMap
 metadata:
   name: backend-tls-certificate
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  namespace: default
+  name: response-override-foo
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: foo
+  responseOverride:
+    - match:
+        statusCodes:
+          - type: Value
+            value: 403
+      response:
+        contentType: text/html
+        body:
+          type: Inline
+          inline: |
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Access Denied</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <style>
+                    body {
+                        font-family: 'Inter', sans-serif;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        background: linear-gradient(to right, #141e30, #243b55);
+                        color: white;
+                        text-align: center;
+                    }
+                    .container {
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 60px;
+                        border-radius: 20px;
+                        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                        width: 500px;
+                        backdrop-filter: blur(15px);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        animation: fadeIn 1s ease-in-out;
+                    }
+                    h1 {
+                        font-size: 36px;
+                        margin-bottom: 15px;
+                        color: #ff6b6b;
+                    }
+                    p {
+                        font-size: 18px;
+                        font-weight: 400;
+                        margin-bottom: 25px;
+                    }
+                    .btn {
+                        background: #ff6b6b;
+                        color: white;
+                        border: none;
+                        padding: 14px 32px;
+                        margin-top: 20px;
+                        border-radius: 50px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease-in-out;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    .btn:hover {
+                        background: #ff4757;
+                        transform: scale(1.1);
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1><i class="fa fa-lock"></i> 🔒 Access Denied</h1>
+                    <p>Oops! You do not have permission to view this page.</p>
+                    <button class="btn" onclick="window.location.href='/'"><i class="fa fa-home"></i> Back to Home</button>
+                </div>
+            </body>
+            </html>
+
+    - match:
+        statusCodes:
+          - type: Value
+            value: 200
+      response:
+        contentType: text/html
+        body:
+          type: Inline
+          inline: |
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>🎉 Access Granted</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <style>
+                    body {
+                        font-family: 'Inter', sans-serif;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        background: linear-gradient(to right, #141e30, #243b55);
+                        color: white;
+                        text-align: center;
+                    }
+                    .container {
+                        background: rgba(255, 255, 255, 0.1);
+                        padding: 50px;
+                        border-radius: 20px;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+                        width: 500px;
+                        backdrop-filter: blur(20px);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        animation: fadeIn 1s ease-in-out;
+                    }
+                    h1 {
+                        font-size: 32px;
+                        margin-bottom: 15px;
+                    }
+                    p {
+                        font-size: 18px;
+                        font-weight: 400;
+                        margin-bottom: 25px;
+                    }
+                    pre {
+                        background: rgba(255, 255, 255, 0.2);
+                        padding: 20px;
+                        border-radius: 10px;
+                        text-align: left;
+                        overflow-x: auto;
+                        font-size: 14px;
+                        width: 100%;
+                        color: #ddd;
+                    }
+                    .btn {
+                        background: #00c6ff;
+                        color: white;
+                        border: none;
+                        padding: 14px 32px;
+                        margin-top: 20px;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 18px;
+                        font-weight: bold;
+                        transition: all 0.3s ease-in-out;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+                    .btn:hover {
+                        background: #0082ca;
+                        transform: scale(1.07);
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1><i class="fa fa-check-circle"></i> 🎉 Access Granted</h1>
+                    <p>Welcome, <strong><span id="username">Huabing Zhao</span></strong>! You are successfully authenticated.</p>
+                    <pre id="user-info">{
+                "name": "Huabing Zhao",
+                "email": "zhaohuabing@gmail.com",
+                "role": "Elite Member"
+            }</pre>
+                    <button class="btn"><i class="fa fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </body>
+            </html>
