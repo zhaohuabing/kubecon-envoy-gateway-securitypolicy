@@ -6,7 +6,7 @@ A Kubernetes cluster (e.g., kind, minikube, Docker Desktop, etc.) with kubectl c
 
 ## Installation
 
-Run `install.sh`, which will install a local kind cluster, Envoy Gateway, and the demo application.
+Run `install.sh`, which will install Envoy Gateway and the demo application.
 Note: If you already did the installation in the oidc-cognito tutorial, you can skip this step.
 
 ```
