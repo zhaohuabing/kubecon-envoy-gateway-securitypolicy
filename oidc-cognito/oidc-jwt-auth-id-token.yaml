@@ -225,7 +225,7 @@ spec:
                 "email": "zhaohuabing@gmail.com",
                 "role": "Elite Member"
             }</pre>
-                    <button class="btn"><i class="fa fa-sign-out-alt"></i> Logout</button>
+                        <button class="btn" onclick="window.location.href='https://www.example.com/foo/logout'"><i class="fa fa-sign-out-alt"></i> Logout</button>
                 </div>
             </body>
             </html>

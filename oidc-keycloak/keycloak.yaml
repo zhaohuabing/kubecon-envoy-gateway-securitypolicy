@@ -125,10 +125,10 @@ data:
     KEYCLOAK_SERVER="http://keycloak"
     REALM="master"
     USERNAME=zhaohuabing                  # This is the user name that will be used for user authentication in Authorization Code Flow
-    PASSWORD=oidcpassword              # This is the user password that will be used for user authentication in Authorization Code Flow
+    PASSWORD=oidcpassword                 # This is the user password that will be used for user authentication in Authorization Code Flow
     CLIENT_ID=oidctest
     CLIENT_SECRET=oidctest-client-secret
-    REDIRECT_URL=https://www.example.com/foo/oauth2/callback
+    REDIRECT_URL=https://www.example.com/*
 
     set -ex
 
