@@ -11,10 +11,10 @@ if [ -z "${CLIENT_ID}" ] || [ -z "${CLIENT_SECRET}" ] || [ -z "${ISSUER}" ]; the
 fi
 
 # Install Envoy Gateway
-helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.3.0 -n envoy-gateway-system --create-namespace
+helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.5.0 -n envoy-gateway-system --create-namespace
 
 # Install the GatewayClass, Gateway, HTTPRoute and example app
-kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.3.0/quickstart.yaml -n default
+kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.5.0/quickstart.yaml -n default
 
 # Create an HTTPRoute
 cat <<EOF | kubectl apply -f -
