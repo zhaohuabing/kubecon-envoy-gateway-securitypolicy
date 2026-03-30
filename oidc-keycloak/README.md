@@ -7,37 +7,20 @@ A Kubernetes cluster (e.g., kind, minikube, Docker Desktop, etc.) with kubectl c
 ## Installation
 
 Run `install.sh`, which will install Envoy Gateway and the demo application.
-Note: If you already did the installation in the oidc-cognito tutorial, you can skip this step.
 
 ```
 ./install.sh
 ```
 
-Note: Backend API is not enabled by default when installing the Envoy Gateway. We need to enable it by running the following command:
-
-```
-./enable-backend.sh
-```
-
-Install Keycloak:
-
-```
-kubectl apply -f keycloak.yaml
-```
-
-Wait for Keycloak to be ready:
-
-```
-kubectl wait --for=condition=Initialized pod -l job-name=setup-keycloak
-```
-
-Create an HTTPRoute, Backend, BackendTLSPolicy, and SecurityPolicy to route traffic to the application and enforce OIDC authentication:
-
-```
-kubectl apply -f securitypolicy.yaml
-```
-
 ## Test OIDC Authentication
+
+Port-forward the Envoy Gateway service to your local machine so you can access it via HTTPS:
+
+```
+export ENVOY_SERVICE=$(kubectl get svc -n envoy-gateway-system --selector=gateway.envoyproxy.io/owning-gateway-namespace=default,gateway.envoyproxy.io/owning-gateway-name=eg -o jsonpath='{.items[0].metadata.name}')
+export KUBECONFIG=~/.kube/config
+sudo env ENVOY_SERVICE=${ENVOY_SERVICE} KUBECONFIG=$KUBECONFIG kubectl -n envoy-gateway-system port-forward service/${ENVOY_SERVICE} 443:443 --address 0.0.0.0 &
+```
 
 If you have not already done so, put www.example.com and in the /etc/hosts file in your test machine, so we can use this host name to access the gateway from a browser:
 

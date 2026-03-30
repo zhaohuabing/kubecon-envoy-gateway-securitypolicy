@@ -1,11 +1,11 @@
 #!/bin/bash
-
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMP_DIR=$(mktemp -d)
 chmod 777 "${TMP_DIR}"
 cd "${TMP_DIR}" || exit
 
 # Install Envoy Gateway
-helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.3.0 -n envoy-gateway-system --create-namespace
+helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.6.0 -n envoy-gateway-system --create-namespace
 
 # Install the GatewayClass, Gateway, HTTPRoute and example app
 kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.3.0/quickstart.yaml -n default
@@ -33,6 +33,8 @@ kubectl patch gateway eg --type=json --patch '
           name: example-cert
   '
 
-export ENVOY_SERVICE=$(kubectl get svc -n envoy-gateway-system --selector=gateway.envoyproxy.io/owning-gateway-namespace=default,gateway.envoyproxy.io/owning-gateway-name=eg -o jsonpath='{.items[0].metadata.name}')
-export KUBECONFIG=~/.kube/config
-sudo env ENVOY_SERVICE=${ENVOY_SERVICE} KUBECONFIG=$KUBECONFIG kubectl -n envoy-gateway-system port-forward service/${ENVOY_SERVICE} 443:443 --address 0.0.0.0 &
+$SCRIPT_DIR/enable-backend.sh
+
+kubectl apply -f $SCRIPT_DIR/keycloak.yaml
+kubectl wait --for=condition=Initialized pod -l job-name=setup-keycloak
+kubectl apply -f $SCRIPT_DIR/securitypolicy.yaml
