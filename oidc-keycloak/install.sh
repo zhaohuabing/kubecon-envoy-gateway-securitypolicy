@@ -5,10 +5,10 @@ chmod 777 "${TMP_DIR}"
 cd "${TMP_DIR}" || exit
 
 # Install Envoy Gateway
-helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.6.0 -n envoy-gateway-system --create-namespace
+helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.7.0 -n envoy-gateway-system --create-namespace
 
 # Install the GatewayClass, Gateway, HTTPRoute and example app
-kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.3.0/quickstart.yaml -n default
+kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.7.0/quickstart.yaml -n default
 
 # Create an HTTPS port for the Gateway, as OIDC requires HTTPS
 # Generate a self-signed certificate for the HTTPS port
